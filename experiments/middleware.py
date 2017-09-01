@@ -9,7 +9,6 @@ except ImportError:
 
 
 class ExperimentsRetentionMiddleware(MiddlewareMixin):
-    # TODO why can't use `settings.CLASSES`?
     def process_response(self, request, response):
         # Don't track, failed pages, ajax requests, logged out users or widget impressions.
         # We detect widgets by relying on the fact that they are flagged as being embedable
