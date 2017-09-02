@@ -1,6 +1,7 @@
 # coding=utf-8
 from __future__ import absolute_import
 
+from operator import attrgetter
 from uuid import uuid4
 
 from django import template
@@ -8,6 +9,7 @@ from django.core.urlresolvers import reverse
 from jinja2 import (
     ext,
     nodes,
+    TemplateSyntaxError,
 )
 
 from experiments.utils import participant
@@ -192,14 +194,16 @@ class ExperimentsExtension(ext.Extension):
             next(parser.stream)
 
         # verify tag syntax:
-        tokens = ['experiment'] + args
+        tokens = [nodes.Const('experiment')] + args
         try:
-            _parse_token_contents(list(map(str, tokens)))
+            _parse_token_contents(list(map(attrgetter('value'), tokens)))
         except ValueError:
-            raise template.TemplateSyntaxError(
+            raise TemplateSyntaxError(
                 "Syntax should be like: "
                 "{% experiment experiment_name"
-                " alternative [weight=val] [user=val] %}")
+                " alternative [weight=val] [user=val] %}",
+                lineno,
+            )
 
         # fill in default values:
         while len(args) < 4:
@@ -301,10 +305,12 @@ class ExperimentsExtension(ext.Extension):
 
         # expecting `as` after the alternatives:
         if not self._token_as(parser):
-            raise template.TemplateSyntaxError(
+            raise TemplateSyntaxError(
                 'Syntax should be like: '
                 '{% experiment_enroll "experiment_name"'
-                ' "alternative1" "alternative2" ... as some_variable %}')
+                ' "alternative1" "alternative2" ... as some_variable %}',
+                lineno,
+            )
         next(parser.stream)
 
         # parse what comes after `as`:

@@ -1,10 +1,21 @@
 from django.contrib.auth.models import User
 from django.template import Template, Context
 from django.test import TestCase, override_settings, RequestFactory
-from experiments.models import Experiment
+from jinja2 import TemplateSyntaxError
+from mock import (
+    ANY,
+    MagicMock,
+    patch,
+)
 
-from experiments.templatetags.experiments import _parse_token_contents
+from experiments.models import Experiment
+from experiments.templatetags.experiments import (
+    ExperimentsExtension,
+    _parse_token_contents,
+)
 from experiments.utils import participant
+
+
 
 
 class ExperimentTemplateTagTestCase(TestCase):
@@ -66,3 +77,100 @@ class ExperimentAutoCreateTestCase(TestCase):
         user = User.objects.create(username='test')
         participant(user=user).enroll('test_experiment_x', alternatives=['other'])
         self.assertTrue(Experiment.objects.filter(name="test_experiment_x").exists())
+
+
+class ExperimentsJinjaExtensionTests(TestCase):
+    def setUp(self):
+        self.env = MagicMock()
+        self.parser = MagicMock()
+        self.extension = ExperimentsExtension(self.env)
+
+    def test_parse(self):
+        self.parser.stream.current.value = 'some_tag'
+        self.extension.parse_some_tag = MagicMock()
+        self.extension.parse(parser=self.parser)
+        self.extension.parse_some_tag.assert_called_once_with(self.parser)
+
+    def test_parse_experiment(self):
+
+        class MockStream:
+            current = None
+            _generator = None
+
+            def __init__(self):
+                self._generator = self._generator_foo()
+
+            def _generator_foo(self):
+
+                self.current = MagicMock(type='string', value='some_experiment', lineno=123)
+                yield self.current
+
+                self.current = MagicMock(type='comma')
+                yield self.current
+
+                self.current = MagicMock(type='string', value='some_alternative')
+                yield self.current
+
+                self.current = MagicMock(type='block_end')
+                yield self.current
+
+                raise StopIteration
+
+            def __next__(self):
+                return next(self._generator)
+
+            def skip_if(self, token_type):
+                should_skip = self.current.type == token_type
+                if should_skip:
+                    next(self._generator)
+                    return self.current
+                return None
+
+        mock_stream = MockStream()
+        next(mock_stream)
+        self.parser.stream = mock_stream
+        self.extension.call_method = MagicMock()
+        self.extension.parse_experiment(self.parser)
+
+        self.extension.call_method.assert_called_once_with(
+            'render_experiment', ANY, lineno=123)
+
+    def test_parse_experiment_too_few_args(self):
+
+        class MockStream:
+            current = None
+            _generator = None
+
+            def __init__(self):
+                self._generator = self._generator_foo()
+
+            def _generator_foo(self):
+
+                self.current = MagicMock(
+                    type='string', value='some_experiment', lineno=123)
+                yield self.current
+
+                self.current = MagicMock(type='block_end')
+                yield self.current
+
+                raise StopIteration
+
+            def __next__(self):
+                return next(self._generator)
+
+            def skip_if(self, token_type):
+                should_skip = self.current.type == token_type
+                if should_skip:
+                    next(self._generator)
+                    return self.current
+                return None
+
+        mock_stream = MockStream()
+        next(mock_stream)
+        self.parser.stream = mock_stream
+        self.extension.call_method = MagicMock()
+        with self.assertRaises(TemplateSyntaxError):
+            self.extension.parse_experiment(self.parser)
+
+        self.extension.call_method.assert_not_called()
+
