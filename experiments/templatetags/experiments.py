@@ -263,17 +263,18 @@ class ExperimentsExtension(ext.Extension):
         return tmplt.render(context_dict)
 
     def parse_experiment_goal(self, parser):
-        """Parse {% experiments_goal ... %} tags"""
+        """Parse {% experiment_goal ... %} tags"""
         lineno = parser.stream.current.lineno
         args = [nodes.ContextReference()]
         goal_name = parser.stream.current
         args.append(self._name_or_const(goal_name))
+        next(parser.stream)
         node = self.call_method(
             'render_experiment_goal', args, lineno=lineno)
         return nodes.CallBlock(node, [], [], []).set_lineno(lineno)
 
     def render_experiment_goal(self, context, goal_name, caller):
-        """Callback to render {% experiments_goal ... %} tags"""
+        """Callback to render {% experiment_goal ... %} tags"""
         tmplt = template.loader.get_template('experiments/goal.html')
         context_dict = dict(context)
         context_dict.update(
