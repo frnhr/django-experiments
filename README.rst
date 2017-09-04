@@ -382,6 +382,11 @@ See conf.py for other settings
 
 Changelog
 ---------
+1.3.1
+~~~~~~~~~~
+ - added unittests for Jinja2 extension
+ - fixed parser stream state after experiment_goal tag
+
 1.3.0
 ~~~~~~~~~~
  - fork to ConsumerAffairs
