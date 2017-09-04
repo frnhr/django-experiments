@@ -1,7 +1,6 @@
 experiments = function() {
     return {
         confirm_human: function() {
-            //$.post("/experiments/confirm_human/");
             var xhr = new XMLHttpRequest();
             xhr.open('POST', '/experiments/confirm_human/');
             xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
@@ -13,7 +12,6 @@ experiments = function() {
             xhr.send();
         },
         goal: function(goal_name) {
-            // $.post("/experiments/goal/" + goal_name);
             var xhr = new XMLHttpRequest();
             xhr.open('POST', '/experiments/goal/' + goal_name + '/');
             xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
@@ -44,6 +42,7 @@ function experimentsCreateCookie(name, value, path, days) {
     document.cookie = name + "=" + value + expires + "; path=" + path;
 }
 
+
 /**
  * Create a global delegate for click events.
  * Trigger a cookie if the required data attribute is present on the clicked node.
@@ -54,15 +53,6 @@ if (document.addEventListener) {
         var goal_name = event.target.getAttribute('data-experiments-goal');
         if (goal_name) {
             experimentsCreateCookie("experiments_goal", goal_name, '/')
-            //$.cookie("experiments_goal", $(event.target).data('experiments-goal'), { path: '/' });
         }
     }, true);
-} else { // IE 8
-    // we don't care about IE8  B-)
-    /*
-    $(document).delegate('[data-experiments-goal]', 'click', function(e) {
-        // if a request is fired by the click event, the cookie might get set after it, thus the goal will be recorded with the next request (if there will be one)
-        $.cookie("experiments_goal", $(this).data('experiments-goal'), { path: '/' });
-    });
-    */
 }
