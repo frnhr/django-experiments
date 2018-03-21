@@ -10,6 +10,7 @@ from django.contrib.auth import get_user_model
 from django.contrib.sessions.backends.db import SessionStore as DatabaseSession
 from django.utils import timezone
 from experiments import conf
+from experiments.conditional.models import ExperimentDisablement
 
 from experiments.experiment_counters import ExperimentCounter
 from experiments.middleware import ExperimentsRetentionMiddleware
@@ -38,6 +39,7 @@ class WebUserTests(object):
 
     def tearDown(self):
         self.experiment_counter.delete(self.experiment)
+        self.experiment.delete()
 
     def test_enrollment_initially_control(self):
         experiment_user = participant(self.request)
@@ -186,8 +188,61 @@ class WebUserAuthenticatedTestCase(WebUserTests, TestCase):
     def setUp(self):
         super(WebUserAuthenticatedTestCase, self).setUp()
         User = get_user_model()
-        self.request.user = User(username='brian')
+        self.user = User(username='brian')
+        self.request.user = self.user
         self.request.user.save()
+        self.exp1 = Experiment.objects.create(name='exp1')
+        self.exp2 = Experiment.objects.create(name='exp2')
+
+    def tearDown(self):
+        self.user.delete()
+        self.exp1.delete()
+        self.exp2.delete()
+        super(WebUserAuthenticatedTestCase, self).tearDown()
+
+    def test_set_disabled_experiments_multiple_disablements_true(self):
+        ExperimentDisablement.objects.create(
+            experiment=self.exp1, user=self.user, disabled=True)
+        ExperimentDisablement.objects.create(
+            experiment=self.exp1, user=self.user, disabled=True)
+        experiment_user = participant(self.request)
+
+        experiment_user.set_disabled_experiments(['exp1', 'exp2'])
+
+        exp1_disablements = ExperimentDisablement.objects.filter(
+            experiment=self.exp1, user=self.user)
+        exp2_disablements = ExperimentDisablement.objects.filter(
+            experiment=self.exp1, user=self.user)
+        self.assertEqual(1, exp1_disablements.count())
+        self.assertEqual(1, exp2_disablements.count())
+
+    def test_set_disabled_experiments_multiple_disablements_false(self):
+        ExperimentDisablement.objects.create(
+            experiment=self.exp1, user=self.user, disabled=False)
+        ExperimentDisablement.objects.create(
+            experiment=self.exp1, user=self.user, disabled=False)
+        experiment_user = participant(self.request)
+
+        experiment_user.set_disabled_experiments(['exp1', 'exp2'])
+
+        exp1_disablements = ExperimentDisablement.objects.filter(
+            experiment=self.exp1, user=self.user)
+        exp2_disablements = ExperimentDisablement.objects.filter(
+            experiment=self.exp1, user=self.user)
+        self.assertEqual(1, exp1_disablements.count())
+        self.assertEqual(1, exp2_disablements.count())
+
+    def test_set_disabled_experiments_no_disablements(self):
+        experiment_user = participant(self.request)
+
+        experiment_user.set_disabled_experiments(['exp1', 'exp2'])
+
+        exp1_disablements = ExperimentDisablement.objects.filter(
+            experiment=self.exp1, user=self.user)
+        exp2_disablements = ExperimentDisablement.objects.filter(
+            experiment=self.exp1, user=self.user)
+        self.assertEqual(1, exp1_disablements.count())
+        self.assertEqual(1, exp2_disablements.count())
 
 
 class BotTests(object):
