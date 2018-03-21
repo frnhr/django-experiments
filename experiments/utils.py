@@ -393,11 +393,26 @@ class AuthenticatedUser(WebUser):
             experiment = experiment_manager.get_experiment(
                 name, auto_create=False)
             if experiment:
-                ExperimentDisablement.objects.get_or_create(
-                    user=self.user,
-                    experiment=experiment,
-                    disabled=True,
-                )
+                try:
+                    ExperimentDisablement.objects.update_or_create(
+                        user=self.user,
+                        experiment=experiment,
+                        defaults={
+                            'disabled': True,
+                        }
+                    )
+                except ExperimentDisablement.MultipleObjectsReturned:
+                    # concurrent requests can rarely create multiple records
+                    # it's cheaper to handle it when occurs then with locking
+                    ExperimentDisablement.objects.filter(
+                        user=self.user,
+                        experiment=experiment,
+                    ).delete()
+                    ExperimentDisablement.objects.create(
+                        user=self.user,
+                        experiment=experiment,
+                        disabled=True,
+                    )
 
     def _cancel_enrollment(self, experiment):
         try:
