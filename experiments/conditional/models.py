@@ -3,7 +3,6 @@ import re
 import logging
 
 from django.conf import settings
-from django.contrib.auth import get_user_model
 from django.db import models
 from django.template import Template, Context
 from django.utils.encoding import python_2_unicode_compatible
@@ -18,8 +17,6 @@ __all__ = [
     'ExperimentDisablement',
 ]
 
-
-User = get_user_model()
 
 logger = logging.getLogger(__file__)
 
@@ -212,13 +209,12 @@ class ExperimentDisablement(models.Model):
     """
     Used to keep record of disabled experiments for Authenticated Users
     """
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     experiment = models.ForeignKey('Experiment', on_delete=models.CASCADE)
     disabled = models.BooleanField(null=False, blank=True, default=True)
 
     class Meta:
         unique_together = (('user', 'experiment'),)
-        index_together = (('user', 'experiment'),)
 
     def __str__(self):
         return '{} - {}'.format(self.user, self.experiment)

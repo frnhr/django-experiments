@@ -47,7 +47,7 @@ def dedupe(apps, schema_editor):
         return cleared_pairs
 
     for cleared in iter(clear_dupes, 0):
-        print(' {}...'.format(cleared))
+        print(' {}...'.format(cleared), end='')
 
 
 class Migration(migrations.Migration):
@@ -61,9 +61,5 @@ class Migration(migrations.Migration):
         migrations.AlterUniqueTogether(
             name='experimentdisablement',
             unique_together=set([('user', 'experiment')]),
-        ),
-        migrations.AlterIndexTogether(
-            name='experimentdisablement',
-            index_together=set([('user', 'experiment')]),
         ),
     ]
