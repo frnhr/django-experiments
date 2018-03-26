@@ -9,21 +9,20 @@ DUPES_QUERY = '''
 SELECT
   `dupes`.`user_id`,
   `dupes`.`experiment_id`,
-  COUNT(*) AS dupe_count
+  COUNT(*) AS `dupe_count`
 FROM (
-
   SELECT
     `experiments_experimentdisablement`.`id`,
     `experiments_experimentdisablement`.`user_id`,
     `experiments_experimentdisablement`.`experiment_id`,
-    CONCAT(`experiments_experimentdisablement`.`user_id`,
-           CONCAT('-', `experiments_experimentdisablement`.`experiment_id`)
+    CONCAT(
+        `experiments_experimentdisablement`.`user_id`,
+        CONCAT('-', `experiments_experimentdisablement`.`experiment_id`)
     ) AS `user_exp`
   FROM `experiments_experimentdisablement`
-) AS dupes
+) AS `dupes`
 GROUP BY `dupes`.`user_exp`
 HAVING `dupe_count` > 1
-ORDER BY `id` DESC
 '''
 
 
