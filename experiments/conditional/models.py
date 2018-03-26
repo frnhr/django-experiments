@@ -15,6 +15,7 @@ from .utils import xml_bool
 __all__ = [
     'AdminConditional',
     'AdminConditionalTemplate',
+    'ExperimentDisablement',
 ]
 
 
