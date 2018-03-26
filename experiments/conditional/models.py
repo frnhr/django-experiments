@@ -215,5 +215,9 @@ class ExperimentDisablement(models.Model):
     experiment = models.ForeignKey('Experiment', on_delete=models.CASCADE)
     disabled = models.BooleanField(null=False, blank=True, default=True)
 
+    class Meta:
+        unique_together = (('user', 'experiment'),)
+        index_together = (('user', 'experiment'),)
+
     def __str__(self):
         return '{} - {}'.format(self.user, self.experiment)
