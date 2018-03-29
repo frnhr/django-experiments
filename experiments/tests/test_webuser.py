@@ -10,6 +10,7 @@ from django.contrib.auth import get_user_model
 from django.contrib.sessions.backends.db import SessionStore as DatabaseSession
 from django.utils import timezone
 from experiments import conf
+from experiments.conditional.models import ExperimentDisablement
 
 from experiments.experiment_counters import ExperimentCounter
 from experiments.middleware import ExperimentsRetentionMiddleware
@@ -38,6 +39,7 @@ class WebUserTests(object):
 
     def tearDown(self):
         self.experiment_counter.delete(self.experiment)
+        self.experiment.delete()
 
     def test_enrollment_initially_control(self):
         experiment_user = participant(self.request)
@@ -180,14 +182,6 @@ class WebUserAnonymousTestCase(WebUserTests, TestCase):
         self.assertEqual(self.experiment_counter.goal_count(self.experiment, TEST_ALTERNATIVE, TEST_GOAL), 0, "Counted goal before confirmed human")
         experiment_user.confirm_human()
         self.assertEqual(self.experiment_counter.goal_count(self.experiment, TEST_ALTERNATIVE, TEST_GOAL), 1, "Did not count goal after confirm human")
-
-
-class WebUserAuthenticatedTestCase(WebUserTests, TestCase):
-    def setUp(self):
-        super(WebUserAuthenticatedTestCase, self).setUp()
-        User = get_user_model()
-        self.request.user = User(username='brian')
-        self.request.user.save()
 
 
 class BotTests(object):

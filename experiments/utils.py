@@ -393,10 +393,12 @@ class AuthenticatedUser(WebUser):
             experiment = experiment_manager.get_experiment(
                 name, auto_create=False)
             if experiment:
-                ExperimentDisablement.objects.get_or_create(
+                ExperimentDisablement.objects.update_or_create(
                     user=self.user,
                     experiment=experiment,
-                    disabled=True,
+                    defaults={
+                        'disabled': True,
+                    }
                 )
 
     def _cancel_enrollment(self, experiment):
