@@ -184,6 +184,13 @@ class WebUserAnonymousTestCase(WebUserTests, TestCase):
         self.assertEqual(self.experiment_counter.goal_count(self.experiment, TEST_ALTERNATIVE, TEST_GOAL), 1, "Did not count goal after confirm human")
 
 
+class AuthenticatedUserTestCase(WebUserTests, TestCase):
+    def setUp(self):
+        super(AuthenticatedUserTestCase, self).setUp()
+        User = get_user_model()  # noqa
+        self.request.user = User.objects.create(username='test')
+
+
 class BotTests(object):
     def setUp(self):
         self.experiment = Experiment(name='backgroundcolor', state=ENABLED_STATE)
