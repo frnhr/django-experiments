@@ -1,6 +1,7 @@
 # coding=utf-8
 from __future__ import absolute_import
 
+from model_mommy import mommy
 from unittest import TestCase
 
 from experiments.conditional.enrollment import Experiments
@@ -66,7 +67,7 @@ class ConditionalEnrollmentTestCase(TestCase):
             },
         }
         self.assertEqual(expected_report, self.experiments.report)
-        expected_list = ['mock_exp_1',]
+        expected_list = ['mock_exp_1', ]
         self.assertEqual(expected_list, self.experiments.disabled_experiments)
 
     @mock.patch('experiments.conditional.enrollment.experiment_manager')
@@ -82,3 +83,42 @@ class ConditionalEnrollmentTestCase(TestCase):
         experiment_manager.get_experiment.side_effect = [None, None]
         self.experiments._evaluate_conditionals()
         self.assertEqual({'conditional': {}}, self.experiments.report)
+
+
+class ConditionalEnrollmentWithDataTest(TestCase):
+
+    def setUp(self):
+        self.request = mock.MagicMock()
+        self.context = {'request': self.request}
+
+    def test_evaluate_conditionals_w_instances_no_patching(self):
+        exp1_alternatives = {
+            'variate_for_exp_1': {
+                'default': True, 'enabled': True, 'weight': 50
+            },
+            'control': {'enabled': True, 'weight': 50},
+        }
+        exp1 = mommy.make(
+            'experiments.Experiment',
+            name='exp_1',
+            alternatives=exp1_alternatives)
+        exp2 = mommy.make('experiments.Experiment', name='exp_2')  # noqa
+        mommy.make(
+            'experiments.AdminConditional',
+            experiment=exp1)
+        experiments = Experiments(self.context)
+        expected_report = {
+            'conditional': {
+                'exp_1': {
+                    'disabled': True,
+                    'enrolled_alternative': 'variate_for_exp_1',
+                },
+                'exp_2': {
+                    'disabled': False,
+                    'enrolled_alternative': None,
+                },
+            },
+        }
+        self.assertEqual(experiments.report, expected_report)
+        disabled_list = ['exp_1', ]
+        self.assertEqual(experiments.disabled_experiments, disabled_list)
