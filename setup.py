@@ -35,6 +35,7 @@ setup(
     ],
     tests_require=[
         'mock>=1.0.1',
+        'model_mommy>=1.5.1',
         'tox>=2.3.1',
     ],
     test_suite="testrunner.runtests",
